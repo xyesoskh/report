@@ -15,7 +15,6 @@ This script does NOT contain obfuscation or marshal/exec and is safe to inspect.
 
 import asyncio
 import os
-import time
 from telethon import TelegramClient, functions, types
 
 
@@ -48,8 +47,8 @@ async def send_report(client, peer, message, ids, use_reason):
                 b"",
                 message
             ))
-    except TypeError as e:
-        # If constructor signature mismatches, try the other form
+    except TypeError:
+        # fallback if signature mismatches
         if use_reason:
             return await client(functions.messages.ReportRequest(peer, ids, b"", message))
         else:
@@ -63,9 +62,7 @@ async def main():
     api_hash = os.getenv('API_HASH') or input('API_HASH (from my.telegram.org): ').strip()
     session = input('Session file name (default: reporter): ').strip() or 'reporter'
 
-    # interactive login will occur if session not logged in
     client = TelegramClient(session, int(api_id), api_hash)
-
     await client.connect()
     if not await client.is_user_authorized():
         print('Not logged in — starting interactive sign-in...')
@@ -79,18 +76,29 @@ async def main():
     post_id = _int_or_none(post_id_raw)
     ids = [post_id] if post_id is not None else []
 
-    message = input('Message (reason/details to include in report): ').strip() or 'Подозрение на накрутку подписчиков и использование фейковых аккаунтов.'
-    count_raw = input('How many reports to send (1): ').strip() or '1'
+    message = input('Message (reason/details to include in report): ').strip() or \
+              'Подозрение на накрутку подписчиков и использование фейковых аккаунтов.'
+
+    # --- ввод количества репортов ---
+    count_raw = input('How many reports to send: ').strip() or '1'
     try:
-        count = max(1, int(count_raw))
-    except Exception:
+        count = int(count_raw)
+        if count < 1:
+            print('Нужно ввести число >= 1. Устанавливаю count = 1.')
+            count = 1
+    except ValueError:
+        print('Неверный ввод — устанавливаю count = 1.')
         count = 1
+
+    MAX_SAFE = 50
+    if count > MAX_SAFE:
+        print(f'Для безопасности максимум = {MAX_SAFE}. Уменьшаю количество до {MAX_SAFE}.')
+        count = MAX_SAFE
 
     # Resolve peer
     try:
         peer = await client.get_input_entity(target)
     except Exception:
-        # try username with @
         try:
             peer = await client.get_input_entity('@' + target)
         except Exception as e:
@@ -101,14 +109,10 @@ async def main():
     # Decide whether modern 'reason' param exists by trying once with reason flag
     use_reason = True
     try:
-        # quick probe: call the constructor signature via types
-        _ = functions.messages.ReportRequest.__init__
         sig = functions.messages.ReportRequest.__init__.__annotations__
-        # If 'reason' is part of annotations, prefer modern call
         if 'reason' not in sig:
             use_reason = False
     except Exception:
-        # fallback to trying both later
         use_reason = True
 
     print('\nSending reports...')
@@ -117,13 +121,12 @@ async def main():
     for i in range(count):
         try:
             res = await send_report(client, peer, message, ids, use_reason)
-            print(f'[{i+1}/{count}] OK — result type: {type(res).__name__}')
+            print(f'[{i+1}/{count}] Успешная отправка!')
             successes += 1
         except Exception as e:
-            print(f'[{i+1}/{count}] ERROR:', repr(e))
+            print(f'[{i+1}/{count}] Ошибка при отправке:', repr(e))
             failures += 1
-        # polite delay to avoid hammering
-        time.sleep(1)
+        await asyncio.sleep(1)  # безопасная задержка между запросами
 
     print(f'\nDone. Successes: {successes}, Failures: {failures}')
     await client.disconnect()
