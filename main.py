@@ -51,9 +51,9 @@ async def send_report(client, peer, message, ids, use_reason):
 async def reporter_main():
     console.print('\n[bold cyan]Аккаунт с которого будут отправляться репорты[/bold cyan]\n')
 
-    api_id = os.getenv('API_ID') or input('[bold cyan]API_ID (from my.telegram.org):[/bold cyan]').strip()
-    api_hash = os.getenv('API_HASH') or input('[bold cyan]API_HASH (from my.telegram.org):[/bold cyan] ').strip()
-    session = input('[bold cyan]Session file name (default: reporter):[/bold cyan] ').strip() or 'reporter'
+    api_id = os.getenv('API_ID') or input('API_ID (from my.telegram.org):').strip()
+    api_hash = os.getenv('API_HASH') or input('API_HASH (from my.telegram.org): ').strip()
+    session = input('Session file name (default: reporter): ').strip() or 'reporter'
 
     client = TelegramClient(session, int(api_id), api_hash)
     await client.connect()
@@ -61,18 +61,18 @@ async def reporter_main():
         console.print('[yellow]Not logged in — starting interactive sign-in...[/yellow]')
         await client.start()
 
-    target = input('\n[bold cyan]Target (channel/group username or link):[/bold cyan] ').strip()
+    target = input('\nTarget (channel/group username or link):').strip()
     if target.startswith('@'):
         target = target[1:]
 
-    post_id_raw = input('[bold cyan]Post ID (leave empty to report the channel itself):[/bold cyan] ').strip()
+    post_id_raw = input('Post ID (leave empty to report the channel itself):').strip()
     post_id = _int_or_none(post_id_raw)
     ids = [post_id] if post_id is not None else []
 
-    message = input('Message (reason/details): ').strip() or \
+    message = input('Message (reason/details):').strip() or \
         'Подозрение на накрутку подписчиков и использование фейковых аккаунтов.'
 
-    count_raw = input('[/bold cyan]How many reports to send:[/bold cyan] ').strip() or '1'
+    count_raw = input('How many reports to send:').strip() or '1'
     try:
         count = int(count_raw)
         if count < 1:
