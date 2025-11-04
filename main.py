@@ -49,7 +49,7 @@ async def send_report(client, peer, message, ids, use_reason):
 
 
 async def reporter_main():
-    console.print('\n[bold cyan]=== Reporter ===[/bold cyan]\n')
+    console.print('\n[bold cyan]Аккаунт с которого будут отправляться репорты[/bold cyan]\n')
 
     api_id = os.getenv('API_ID') or input('API_ID (from my.telegram.org): ').strip()
     api_hash = os.getenv('API_HASH') or input('API_HASH (from my.telegram.org): ').strip()
@@ -131,7 +131,7 @@ def show_header():
 
 
 def run_reporter():
-    console.print("\n[green]Запуск reporter — реальные репорты будут отправлены.[/green]")
+    console.print("\n[green]Запуск сносера[/green]")
     asyncio.run(reporter_main())
     console.print("[cyan]Завершено. Возврат в меню.[/cyan]")
 
@@ -145,10 +145,10 @@ def main_menu():
         console.print("[cyan]2.[/cyan] Снос канала")
         console.print("[cyan]3.[/cyan] Выйти")
 
-        choice = Prompt.ask("\n[bold yellow]Введите номер[/bold yellow]", choices=["1", "2", "3"])
+        choice = Prompt.ask("\n[bold red]Введите номер[/bold red]")
 
         if choice in ["1", "2"]:
-            console.print(f"\n[green]→ Репорт ({'человек' if choice=='1' else 'канал'})[/green]")
+            console.print(f"\n[red]→ Репорт ({'человек' if choice=='1' else 'канал'})[/red]")
             run_reporter()
             input("\nНажмите Enter, чтобы вернуться в меню...")
         elif choice == "3":
